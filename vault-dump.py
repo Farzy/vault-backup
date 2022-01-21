@@ -45,28 +45,21 @@ def print_header():
 
 # looks at an argument for a value and prints the key
 #  if a value exists
-def recurse_for_values(mount, path_prefix, candidate_key):
-    if 'keys' in candidate_key:
-        candidate_values = candidate_key['keys']
-    else:
-        candidate_values = candidate_key['data']['keys']
-    # print("### candidate values: {}".format(candidate_values))
+def recurse_for_values(mount, path):
+    entries = client.secrets.kv.v2.list_secrets(mount_point=vault_mount, path=path)
+    candidate_values = entries['data']['keys']
     for candidate_value in candidate_values:
-        next_index = path_prefix + candidate_value
         if candidate_value.endswith('/'):
-            next_value = client.secrets.kv.v2.list_secrets(mount_point=mount, path=next_index)
-            recurse_for_values(mount, next_index, next_value)
+            recurse_for_values(mount, path + candidate_value)
         else:
+            item_path = path + candidate_value
             try:
-                final_data = client.secrets.kv.v2.read_secret(mount_point=mount, path=next_index)
+                final_data = client.secrets.kv.v2.read_secret(mount_point=mount, path=item_path)
             except hvac.exceptions.InvalidPath: # Exception raised if item is deleted
                 final_data = {}
-            # print("### Final data: {}".format(final_data))
-            if 'rules' in final_data:
-                print("echo -ne {} | vault policy write {} -".format(repr(final_data['rules']), candidate_value))
-            elif 'data' in final_data:
+            if 'data' in final_data:
                 final_dict = final_data['data']['data']
-                print("vault kv put {}{}".format(vault_mount, next_index), end='')
+                print("vault kv put {}{}".format(vault_mount, item_path), end='')
 
                 sorted_final_keys = sorted(final_dict.keys())
                 for final_key in sorted_final_keys:
@@ -74,7 +67,7 @@ def recurse_for_values(mount, path_prefix, candidate_key):
                     print(" '{0}'={1}".format(final_key, repr(final_value)), end='')
                 print()
             else:
-                print("# WARNING: {} is deleted".format(repr(next_index)))
+                print("# WARNING: {} is deleted".format(repr(item_path)))
 
 
 env_vars = os.environ.copy()
@@ -102,5 +95,4 @@ vault_mount = os.environ.get('VAULT_MOUNT', 'secret')
 top_vault_prefix = os.environ.get('TOP_VAULT_PREFIX','/')
 
 print_header()
-top_level_keys = client.secrets.kv.v2.list_secrets(mount_point=vault_mount, path=top_vault_prefix)
-recurse_for_values(vault_mount, top_vault_prefix, top_level_keys)
+recurse_for_values(vault_mount, top_vault_prefix + "/")
