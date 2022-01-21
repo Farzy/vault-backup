@@ -17,7 +17,7 @@ The following environment variables are used:
 * `PYTHONIOENCODING` is used to ensure your keys are exported in valid encoding, make sure to use the same during import/export
 * `VAULT_ADDR` - vault address endpoint to use, default is http://localhost:8200
 * `VAULT_MOUNT` - Vault mount point to dump, optional, defaults to "secret"
-* `TOP_VAULT_PREFIX` - path to dump, optional, useful when dumping only a fraction of the vault, defaults to "/"
+* `TOP_VAULT_PREFIX` - path to dump, optional, useful when dumping only a fraction of the vault, defaults to ""
 * `VAULT_CACERT` - cert if using https:// with client cert, but actually not tested
 * `VAULT_SKIP_VERIFY` - Skip TLS cert verification, default to false
 

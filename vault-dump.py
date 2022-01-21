@@ -59,13 +59,16 @@ def recurse_for_values(mount, path):
                 final_data = {}
             if 'data' in final_data:
                 final_dict = final_data['data']['data']
-                print("vault kv put {}{}".format(vault_mount, item_path), end='')
+                print("vault kv put {}/{}".format(vault_mount, item_path), end='')
 
-                sorted_final_keys = sorted(final_dict.keys())
-                for final_key in sorted_final_keys:
-                    final_value = final_dict[final_key]
-                    print(" '{0}'={1}".format(final_key, repr(final_value)), end='')
-                print()
+                if len(final_dict) != 0:
+                    sorted_final_keys = sorted(final_dict.keys())
+                    for final_key in sorted_final_keys:
+                        final_value = final_dict[final_key]
+                        print(" '{0}'={1}".format(final_key, repr(final_value)), end='')
+                    print()
+                else:
+                    print(" ''")
             else:
                 print("# WARNING: {} is deleted".format(repr(item_path)))
 
@@ -92,7 +95,12 @@ if os.environ.get('VAULT_SKIP_VERIFY'):
 assert client.is_authenticated()
 
 vault_mount = os.environ.get('VAULT_MOUNT', 'secret')
-top_vault_prefix = os.environ.get('TOP_VAULT_PREFIX','/')
+top_vault_prefix = os.environ.get('TOP_VAULT_PREFIX','')
+if top_vault_prefix == '/':
+    top_vault_prefix = ''
+elif len(top_vault_prefix) != 0:
+    top_vault_prefix = top_vault_prefix.rstrip('/') + '/'
+
 
 print_header()
-recurse_for_values(vault_mount, top_vault_prefix + "/")
+recurse_for_values(vault_mount, top_vault_prefix)
